@@ -1,0 +1,12 @@
+To see output, first install cargo-expand:
+
+```
+cargo install cargo-expand
+```
+
+Then run
+
+```
+cargo expand --bin test
+```
+
