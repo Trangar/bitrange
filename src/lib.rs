@@ -1,7 +1,7 @@
 #![crate_type="dylib"]
 #![feature(plugin_registrar, rustc_private)]
 
-#![allow(unused_variables)]
+#![allow(unused_variables, unused_imports)]
 
 extern crate syntax;
 extern crate rustc;
@@ -119,14 +119,17 @@ pub fn generate_struct(cx: &mut ExtCtxt, sp: Span, state: &State) -> P<ast::Item
     let item = ast::Item {
         ident: Ident::from_str(&state.name),
         attrs: vec![
-            /*ast::Attribute {
+            ast::Attribute {
                 id: ast::AttrId(1),
                 style: ast::AttrStyle::Outer,
-                path: ast::Path::from_ident(sp, Ident::from_str("Derive(Debug)")),
-                tokens: builder.build(),
+                path: ast::Path::from_ident(sp, Ident::from_str("derive")),
+                tokens: builder.add(Token::OpenDelim(DelimToken::Paren))
+                               .add(Token::Ident(Ident::from_str("Debug")))
+                               .add(Token::CloseDelim(DelimToken::Paren))
+                               .build(),
                 is_sugared_doc: false,
                 span: sp.clone(),
-            }*/
+            }
         ],
         id: ast::DUMMY_NODE_ID,
         node: ast::ItemKind::Struct(
@@ -134,9 +137,17 @@ pub fn generate_struct(cx: &mut ExtCtxt, sp: Span, state: &State) -> P<ast::Item
                 ast::StructField {
                     span: sp,
                     ident: Some(Ident::from_str("bits")),
-                    vis: respan(sp, ast::VisibilityKind::Private),
+                    vis: respan(sp, ast::VisibilityKind::Public),
                     id: ast::DUMMY_NODE_ID,
-                    ty: P()
+                    ty: P(ast::Ty {
+                        id: ast::DUMMY_NODE_ID,
+                        node: ast::TyKind::Path(
+                            None,
+                            ast::Path::from_ident(sp, Ident::from_str("u8"))
+                        ),
+                        span: sp,
+                    }),
+                    attrs: Vec::new(),
                 }
             ], ast::DUMMY_NODE_ID),
             Default::default()
@@ -150,13 +161,114 @@ pub fn generate_struct(cx: &mut ExtCtxt, sp: Span, state: &State) -> P<ast::Item
 }
 
 pub fn generate_impl(cx: &mut ExtCtxt, sp: Span, state: &State) -> P<ast::Item> {
-    panic!("generate_impl not implemented");
+    let mut items = vec![
+    ];
+    for (key, name) in state.methods.iter() {
+        items.push(ast::ImplItem {
+            id: ast::DUMMY_NODE_ID,
+            ident: Ident::from_str(name),
+            vis: respan(sp, ast::VisibilityKind::Public),
+            defaultness: ast::Defaultness::Final,
+            attrs: Vec::new(),
+            generics: ast::Generics::default(),
+            span: sp,
+            tokens: None, 
+            node: ast::ImplItemKind::Method(
+                ast::MethodSig {
+                    unsafety: ast::Unsafety::Normal,
+                    constness: respan(sp, ast::Constness::NotConst),
+                    abi: syntax::abi::Abi::Rust,
+                    decl: P(ast::FnDecl {
+                        inputs: vec![
+                            ast::Arg {
+                                id: ast::DUMMY_NODE_ID,
+                                ty: P(ast::Ty {
+                                    id: ast::DUMMY_NODE_ID,
+                                    node: ast::TyKind::Rptr(
+                                        None,
+                                        ast::MutTy {
+                                            ty: P(ast::Ty {
+                                                id: ast::DUMMY_NODE_ID,
+                                                node: ast::TyKind::ImplicitSelf,
+                                                span: sp
+                                            }),
+                                            mutbl: ast::Mutability::Immutable
+                                        }
+                                    ),
+                                    span: sp
+                                }),
+                                pat: P(ast::Pat {
+                                    id: ast::DUMMY_NODE_ID,
+                                    node: ast::PatKind::Ident(
+                                        ast::BindingMode::ByValue(ast::Mutability::Immutable),
+                                        respan(sp, ast::Ident::from_str("self")),
+                                        None
+                                    ),
+                                    span: sp,
+                                })
+                            }
+                        ],
+                        output: ast::FunctionRetTy::Ty(P(ast::Ty {
+                            id: ast::DUMMY_NODE_ID,
+                            node: ast::TyKind::Path(
+                                None,
+                                ast::Path::from_ident(sp, Ident::from_str("u8"))
+                            ),
+                            span: sp,
+                        })),
+                        variadic: false,
+                    })
+                },
+                P(ast::Block {
+                    stmts: vec![
+                        ast::Stmt {
+                            id: ast::DUMMY_NODE_ID,
+                            node: ast::StmtKind::Expr(P(ast::Expr {
+                                id: ast::DUMMY_NODE_ID,
+                                node: ast::ExprKind::Lit(P(respan(sp, ast::LitKind::Byte(0)))),
+                                span: sp,
+                                attrs: syntax::util::ThinVec::new(),
+                            })),
+                            span: sp,
+                        }
+                    ],
+                    id: ast::DUMMY_NODE_ID,
+                    rules: ast::BlockCheckMode::Default,
+                    span: sp,
+                    recovered: false,
+                })
+            )
+        });
+    }
+    let struct_impl = ast::ItemKind::Impl(
+        ast::Unsafety::Normal,
+        ast::ImplPolarity::Positive,
+        ast::Defaultness::Final,
+        ast::Generics::default(),
+        None,
+        P(ast::Ty {
+            id: ast::DUMMY_NODE_ID,
+            node: ast::TyKind::Path(None, ast::Path::from_ident(sp, Ident::from_str(&state.name))),
+            span: sp
+        }),
+        items
+    );
+    let item = ast::Item {
+        ident: Ident::from_str(""),
+        attrs: Vec::new(),
+        id: ast::DUMMY_NODE_ID,
+        node: struct_impl,
+        vis: respan(sp, ast::VisibilityKind::Inherited),
+        span: sp.clone(),
+        tokens: None,
+    };
+    P(item)
 }
 
 pub fn generate(cx: &mut ExtCtxt, sp: Span, state: State) -> Box<MacResult + 'static> {
     let mut it = Vec::with_capacity(2);
     it.push(generate_struct(cx, sp, &state));
-    // it.push(generate_impl(cx, sp, &state));
+    it.push(generate_impl(cx, sp, &state));
     MacEager::items(SmallVec::many(it.into_iter()))
 }
 

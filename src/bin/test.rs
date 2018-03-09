@@ -1,13 +1,15 @@
-extern crate bitrange;
+#![feature(plugin)]
+#![plugin(bitrange)]
+
+fn main(){
+    let test = Test { bits: 0 };
+    println!("{:?}", test);
+    println!("first: {:?}", test.first());
+    println!("second: {:?}", test.second());
+}
 
 #[test]
 fn test_basic() {
-    bitrange! {
-        Test,
-        [aaa_bbbb],
-        a: first,
-        b: second,
-    }
 
     let test = Test { bits: 0b1110_0000 };
     assert_eq!(test.first(), 0b111);
@@ -34,10 +36,11 @@ fn test_basic() {
     assert_eq!(test.second(), 0b0111);
 }
 
+/*
 #[test]
 fn test_mut() {
     bitrange! {
-        Test,
+        Test
         [aaa_bbbb],
         a: first,
         b: second,
@@ -56,7 +59,7 @@ fn test_mut() {
 #[test]
 fn test_gap() {
     bitrange! {
-        Test,
+        Test
         [aabb_bbaa],
         a: first,
         b: second
@@ -67,4 +70,11 @@ fn test_gap() {
     // second is bb_bbxx, so it gets shifted to the right 2 bits
     // 0b1111_1111 & bb_bbxx = 0b0011_1100 -> bbbb = 0b0000_1111
     assert_eq!(test.second(), 0b0000_1111);
+}
+*/
+bitrange! {
+    Test
+    [aaa_bbbb],
+    a: first,
+    b: second,
 }
