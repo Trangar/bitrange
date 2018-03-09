@@ -1,0 +1,15 @@
+[package]
+name = "bitrange"
+version = "0.1.0"
+authors = ["Victor Koenders <victor.koenders@gmail.com>"]
+
+[lib]
+name = "bitrange"
+plugin = true
+
+[[bin]]
+name = "test"
+path = "src/bin/test.rs"
+
+[dependencies]
+
