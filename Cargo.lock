@@ -1,4 +1,11 @@
 [[package]]
 name = "bitrange"
 version = "0.1.0"
+dependencies = [
+ "bitrange_macro 0.1.0",
+]
+
+[[package]]
+name = "bitrange_macro"
+version = "0.1.0"
 

@@ -1,0 +1,8 @@
+[package]
+name = "bitrange_macro"
+version = "0.1.0"
+authors = ["Victor Koenders"]
+
+[lib]
+name = "bitrange_macro"
+proc-macro = true
