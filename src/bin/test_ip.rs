@@ -1,3 +1,4 @@
+#[cfg(test)]
 mod test_get {
 
     bitrange! {
@@ -18,6 +19,7 @@ mod test_get {
         assert_eq!(header.total_length(), 0b0100);
     }
 }
+#[cfg(test)]
 mod test_set {
     bitrange! {
         IpHeader: u32,                           // struct name
