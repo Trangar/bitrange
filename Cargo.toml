@@ -1,9 +1,10 @@
 [package]
 name = "bitrange"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Victor Koenders <victor.koenders@gmail.com>"]
 description = "Simple plugin to map bits in integer values to fields"
 license = "MIT"
+readme = "readme.md"
 
 [[bin]]
 name = "test"

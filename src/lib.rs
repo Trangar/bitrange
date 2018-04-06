@@ -4,6 +4,16 @@ extern crate bitrange_plugin;
 
 pub use bitrange_plugin::{proc_default_mask, proc_default_value, proc_mask, proc_offset};
 
+/// Create a bitrange struct.
+/// 
+/// ```rust
+/// bitrange! {
+///     Test: u8,               // the name of the struct and the size of the internal integer
+///     [aaa1_0bbb],            // the format of the bits in the internal integer
+///     a: first,               // map the bits that are marked as `a` to field `first`
+///     b: second set_second   // map the bits that are marked as `b` to field `second`
+///                             // and create a setter `set_second` that sets a given value to `b`
+/// }
 #[macro_export]
 macro_rules! bitrange {
     (
