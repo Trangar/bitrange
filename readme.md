@@ -22,7 +22,7 @@ bitrange needs a nightly version of the compiler because it uses the feature `pr
 
 Bitrange helps you map bit fields to proper getters and setters.
 
-Say you're trying to make an IP parser. The [|rfc] will give you this:
+Say you're trying to make an IP parser. The [rfc](https://tools.ietf.org/html/rfc791#section-3.1) will give you this:
 
 ```
     0                   1                   2                   3
