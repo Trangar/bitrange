@@ -2,6 +2,8 @@
 name = "bitrange_plugin"
 version = "0.1.0"
 authors = ["Victor Koenders"]
+description = "Compiler plugin for bitrange to parse formats"
+license = "MIT"
 
 [lib]
 name = "bitrange_plugin"

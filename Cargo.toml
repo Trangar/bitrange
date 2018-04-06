@@ -2,6 +2,8 @@
 name = "bitrange"
 version = "0.1.0"
 authors = ["Victor Koenders <victor.koenders@gmail.com>"]
+description = "Simple plugin to map bits in integer values to fields"
+license = "MIT"
 
 [[bin]]
 name = "test"

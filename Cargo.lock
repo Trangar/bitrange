@@ -2,10 +2,13 @@
 name = "bitrange"
 version = "0.1.0"
 dependencies = [
- "bitrange_macro 0.1.0",
+ "bitrange_plugin 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
-name = "bitrange_macro"
+name = "bitrange_plugin"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
+[metadata]
+"checksum bitrange_plugin 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "985b1fec36d34df2b0d08795a49431bb69a24ec3ce9d8fb186d6d9381e8de411"
