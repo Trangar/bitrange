@@ -8,4 +8,4 @@ name = "test"
 path = "src/bin/test.rs"
 
 [dependencies]
-bitrange_macro = { path = "proc_macro" }
+bitrange_macro = { path = "proc_macro", version = "0.1.0" }
