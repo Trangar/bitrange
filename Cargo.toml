@@ -10,5 +10,5 @@ name = "test"
 path = "src/bin/test.rs"
 
 [dependencies]
-bitrange_plugin = "*"
+bitrange_plugin = "0.1.0"
 
