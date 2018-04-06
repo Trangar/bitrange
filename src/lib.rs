@@ -1,8 +1,8 @@
 #![deny(warnings)]
 #![feature(proc_macro)]
-extern crate bitrange_macro;
+extern crate bitrange_plugin;
 
-pub use bitrange_macro::{proc_default_mask, proc_default_value, proc_mask, proc_offset};
+pub use bitrange_plugin::{proc_default_mask, proc_default_value, proc_mask, proc_offset};
 
 #[macro_export]
 macro_rules! bitrange {

@@ -1,8 +1,8 @@
 [package]
-name = "bitrange_macro"
+name = "bitrange_plugin"
 version = "0.1.0"
 authors = ["Victor Koenders"]
 
 [lib]
-name = "bitrange_macro"
+name = "bitrange_plugin"
 proc-macro = true
