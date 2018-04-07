@@ -2,11 +2,43 @@
 #![feature(proc_macro)]
 extern crate bitrange_plugin;
 
-pub use bitrange_plugin::{proc_default_mask, proc_default_value, proc_mask, proc_offset};
+/// Return the default mask of a format
+/// This are all the fields that are set to either `0` or `1`
+/// 
+/// usage:  `proc_default_mask([aaa0_1bbb]);`
+/// output: `0b0001_1000`
+pub use bitrange_plugin::proc_default_mask;
+
+/// Returns the default value of a format
+/// This is a value with 1 for every `1` in the format
+/// 
+/// usage:  `proc_default_value([aaa0_1bbb]);`
+/// output: `0b0000_1000`
+pub use bitrange_plugin::proc_default_value;
+
+/// Create a mask based on a given format and a character
+/// This will map all the bits that match the given character, to 1
+/// All other bits will be set to 0
+/// 
+/// usage:  `proc_mask!([aaa0_1bbb], a);`
+/// output: `0b1110_0000`
+pub use bitrange_plugin::proc_mask;
+
+/// Return the offset of a given character in a format
+/// This is the amount of least-significant bits in the proc_mask that are 0
+/// 
+/// usage:  `proc_offset([aaa0_1bbb], a);`
+/// output: `5` (0b1110_0000 has 5 least-significant bits that are 0)
+pub use bitrange_plugin::proc_offset;
 
 /// Create a bitrange struct.
 /// 
 /// ```rust
+/// #![deny(warnings)]
+/// #![feature(proc_macro)]
+/// #[macro_use]
+/// extern crate bitrange;
+/// # fn main() {
 /// bitrange! {
 ///     Test: u8,               // the name of the struct and the size of the internal integer
 ///     [aaa1_0bbb],            // the format of the bits in the internal integer
@@ -14,6 +46,8 @@ pub use bitrange_plugin::{proc_default_mask, proc_default_value, proc_mask, proc
 ///     b: second set_second    // map the bits that are marked as `b` to field `second`
 ///                             // and create a setter `set_second` that sets a given value to `b`
 /// }
+/// # }
+/// ```
 #[macro_export]
 macro_rules! bitrange {
     (

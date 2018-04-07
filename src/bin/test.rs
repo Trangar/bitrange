@@ -1,3 +1,5 @@
+#![doc(hidden)]
+
 #![deny(warnings)]
 #![feature(proc_macro)]
 #[cfg(test)]
