@@ -5,6 +5,8 @@ authors = ["Victor Koenders"]
 description = "Compiler plugin for bitrange to parse formats"
 license = "MIT"
 readme = "../readme.md"
+documentation = "https://trangar.github.io/doc/bitrange_plugin/index.html"
+repository = "https://github.com/trangar/bitrange"
 
 [lib]
 name = "bitrange_plugin"
