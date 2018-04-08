@@ -12,7 +12,7 @@ mod test_get {
 
     #[test]
     fn test() {
-        let header = IpHeader::from(0b0001_0010_00000011_0000000000000100);
+        let header = IpHeader::from(0b0001_0010_00000011_0000000000000100).unwrap();
         assert_eq!(header.version(), 0b0001);
         assert_eq!(header.ihl(), 0b0010);
         assert_eq!(header.type_of_service(), 0b0011);
@@ -32,7 +32,7 @@ mod test_set {
 
     #[test]
     fn test() {
-        let mut header = IpHeader::from(0b0001_0010_00000011_0000000000000100);
+        let mut header = IpHeader::from(0b0001_0010_00000011_0000000000000100).unwrap();
         assert_eq!(header.version(), 0b0001);
         assert_eq!(header.ihl(), 0b0010);
         assert_eq!(header.type_of_service(), 0b0011);

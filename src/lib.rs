@@ -1,6 +1,9 @@
 #![deny(warnings)]
+#![cfg_attr(not(feature = "std"), no_std)]
+
 #![feature(proc_macro)]
 extern crate bitrange_plugin;
+
 
 /// Return the default mask of a format
 /// This are all the fields that are set to either `0` or `1`
@@ -30,6 +33,47 @@ pub use bitrange_plugin::proc_mask;
 /// usage:  `proc_offset([aaa0_1bbb], a);`
 /// output: `5` (0b1110_0000 has 5 least-significant bits that are 0)
 pub use bitrange_plugin::proc_offset;
+
+#[cfg(feature = "panic")]
+mod error {
+    #[cfg(feature = "std")]
+    use std::marker::PhantomData;
+    #[cfg(feature = "std")]
+    use std::fmt::Binary;
+    #[cfg(not(feature = "std"))]
+    use core::marker::PhantomData;
+    #[cfg(not(feature = "std"))]
+    use core::fmt::Binary;
+
+    #[derive(Debug)]
+    pub struct Error<T> { _phantomdata: PhantomData<T> }
+    
+    impl<T> Error<T> where T : Binary {
+        pub fn invalid_bits(expected: T, provided: T) -> Error<T> {
+            panic!("Invalid bits, expected 0b{:0b}, got 0b{:0b}", expected, provided);
+        }
+    }
+}
+
+#[cfg(not(feature = "panic"))]
+mod error {
+    #[derive(Debug)]
+    pub struct Error<T> {
+        pub expected: T,
+        pub provided: T,
+    }
+
+    impl<T> Error<T> {
+        pub fn invalid_bits(expected: T, provided: T) -> Error<T> {
+            Error {
+                expected,
+                provided,
+            }
+        }
+    }
+}
+
+pub use error::Error;
 
 /// Create a bitrange struct.
 /// 
@@ -77,15 +121,18 @@ macro_rules! bitrange {
         }
         impl $struct_name {
             #[allow(dead_code)]
-            pub fn from(bits: $struct_size) -> $struct_name {
+            pub fn from(bits: $struct_size) -> Result<$struct_name, ::bitrange::Error<$struct_size>> {
                 #[allow(dead_code)]
                 const DEFAULT_VALUE: $struct_size = ::bitrange::proc_default_value!($format);
                 #[allow(dead_code)]
                 const DEFAULT_MASK: $struct_size = ::bitrange::proc_default_mask!($format);
 
-                assert_eq!(bits & DEFAULT_MASK, DEFAULT_VALUE, "Given bits do not match the pattern");
-                $struct_name {
-                    bits
+                if bits & DEFAULT_MASK == DEFAULT_VALUE {
+                    Ok($struct_name {
+                        bits
+                    })
+                } else {
+                    Err(::bitrange::Error::invalid_bits(DEFAULT_VALUE, bits & DEFAULT_MASK))
                 }
             }
         }
