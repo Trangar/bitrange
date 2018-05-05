@@ -2,6 +2,7 @@
 
 #![deny(warnings)]
 #![feature(proc_macro)]
+#![feature(proc_macro_non_items)]
 #[cfg(test)]
 #[macro_use]
 extern crate bitrange;

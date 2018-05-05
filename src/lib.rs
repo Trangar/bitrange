@@ -2,6 +2,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #![feature(proc_macro)]
+#![feature(proc_macro_non_items)]
 extern crate bitrange_plugin;
 
 
