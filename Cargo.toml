@@ -7,6 +7,7 @@ license = "MIT"
 readme = "readme.md"
 documentation = "https://trangar.github.io/doc/bitrange/index.html"
 repository = "https://github.com/trangar/bitrange"
+autobins = false
 
 [features]
 default = ["std"]
@@ -18,5 +19,5 @@ name = "test"
 path = "src/bin/test.rs"
 
 [dependencies]
-bitrange_plugin = "0.1.2"
+bitrange_plugin = { path = "bitrange_plugin" } # "0.1.2"
 

@@ -11,3 +11,8 @@ repository = "https://github.com/trangar/bitrange"
 [lib]
 name = "bitrange_plugin"
 proc-macro = true
+
+[dependencies]
+syn = "*"
+quote = "*"
+proc-macro2 = "*"

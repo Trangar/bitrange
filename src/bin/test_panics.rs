@@ -2,8 +2,8 @@
 #[cfg(not(feature = "panic"))]
 fn test_error() {
     bitrange! {
-        Test: u8,
-        [1111_111a],
+        Test: u8, "u8",
+        "1111_111a",
         a: _first
     }
     // Because the pattern is 1111_111
@@ -22,8 +22,8 @@ fn test_error() {
 #[should_panic]
 fn test_panic() {
     bitrange! {
-        Test: u8,
-        [1111_111a],
+        Test: u8, "u8",
+        "1111_111a",
         a: _first
     }
     // Because the pattern is 1111_111

@@ -1,10 +1,12 @@
 #![doc(hidden)]
 
 #![deny(warnings)]
-#![feature(proc_macro)]
 #[cfg(test)]
 #[macro_use]
 extern crate bitrange;
+#[cfg(test)]
+#[macro_use]
+extern crate bitrange_plugin;
 
 pub mod test_ip;
 pub mod test_panics;
@@ -12,8 +14,8 @@ pub mod test_panics;
 #[test]
 fn test_default() {
     bitrange! {
-        Test: u8,
-        [aaa1_0bbb],
+        Test: u8, "u8",
+        "aaa1_0bbb",
         a: first,
         b: second
     }
@@ -27,8 +29,8 @@ fn test_default() {
 #[test]
 fn test_default_2() {
     bitrange! {
-        Test: u8,
-        [aaa1_0bbb],
+        Test: u8, "u8",
+        "aaa1_0bbb",
         a: first
     }
 

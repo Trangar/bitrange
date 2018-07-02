@@ -20,9 +20,10 @@
 //! 
 //! We will split this into 6 different bitfields
 
-#![feature(proc_macro)]
 #[macro_use]
 extern crate bitrange;
+#[macro_use]
+extern crate bitrange_plugin;
 
 /// First bitrange: 
 ///     0                   1                   2                   3
@@ -32,14 +33,13 @@ extern crate bitrange;
 ///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 bitrange! {
-    Ipv4First: u32,
-    [aaaa_bbbb_cccccccc_dddddddddddddddd],
+    Ipv4First: u32, "u32",
+    "aaaa_bbbb_cccccccc_dddddddddddddddd",
     a: version,
     b: ihl,
     c: type_of_service,
     d: total_length
 }
-
 /// Second bitrange:
 ///     0                   1                   2                   3
 ///     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -48,8 +48,8 @@ bitrange! {
 ///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 bitrange! {
-    Ipv4Second: u32,
-    [aaaaaaaaaaaaaaaa_bbb_ccccccccccccc],
+    Ipv4Second: u32, "u32",
+    "aaaaaaaaaaaaaaaa_bbb_ccccccccccccc",
     a: identification,
     b: flags,
     c: fragment_offset
@@ -63,8 +63,8 @@ bitrange! {
 ///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 bitrange! {
-    Ipv4Third: u32,
-    [aaaaaaaa_bbbbbbbb_cccccccccccccccc],
+    Ipv4Third: u32, "u32",
+    "aaaaaaaa_bbbbbbbb_cccccccccccccccc",
     a: time_to_live,
     b: protocol,
     c: header_checksum
@@ -93,8 +93,8 @@ bitrange! {
 ///    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 bitrange! {
-    Ipv4Sixth: u32,
-    [aaaaaaaaaaaaaaaaaaaaaaaa_bbbbbbbb],
+    Ipv4Sixth: u32, "u32",
+    "aaaaaaaaaaaaaaaaaaaaaaaa_bbbbbbbb",
     a: options,
     b: padding
 }

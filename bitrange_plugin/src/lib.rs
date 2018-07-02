@@ -1,117 +1,132 @@
-#![deny(warnings)]
+// #![deny(warnings)]
 #![feature(proc_macro)]
 
 extern crate proc_macro;
+extern crate proc_macro2;
+extern crate syn;
+extern crate quote;
 
 mod pattern;
 
 use proc_macro::TokenStream;
 use pattern::Pattern;
+use std::str::FromStr;
 
-/// Create a mask based on a given format and a character
-/// This will map all the bits that match the given character, to 1
-/// All other bits will be set to 0
-/// 
-/// usage:  `proc_mask!([aaa0_1bbb], a);`
-/// output: `0b1110_0000`
-#[proc_macro]
-pub fn proc_mask(input: TokenStream) -> TokenStream {
-    let pattern = match Pattern::from_stream_with_selector(input) {
-        Ok(p) => p,
-        Err(e) => {
-            println!("{}", e);
-            println!("Usage: proc_mask!([aaa0_bbbb], a);");
-            panic!();
-        }
-    };
+#[proc_macro_derive(Bitrange, attributes(BitrangeMask, BitrangeSize))]
+pub fn bitrange(input: TokenStream) -> TokenStream {
+    let pattern = Pattern::from_stream(input).expect("Could not parse mask");
 
-    let total_length = pattern.pattern.len();
-    let mut result = String::with_capacity(total_length + 2);
-    result.push_str("0b");
-    for i in 0..total_length {
-        result.push_str(if pattern.current.contains(&i) {
-            "1"
-        } else {
-            "0"
-        });
-    }
+    let str = format!(r#"
+impl {struct_name} {{
+    {get_mask}
+    {get_offset}
+    {get_default_mask}
+    {get_default_value}
+}}
+"#,
+struct_name = pattern.struct_name,
+get_mask = generate_mask(&pattern),
+get_offset = generate_offset(&pattern),
+get_default_mask = generate_default_mask(&pattern),
+get_default_value = generate_default_value(&pattern),
+);
 
-    result.parse().unwrap()
+    // println!("{}", str);
+    TokenStream::from_str(&str).unwrap()
 }
 
-/// Return the offset of a given character in a format
-/// This is the amount of least-significant bits in the proc_mask that are 0
-/// 
-/// usage:  `proc_offset([aaa0_1bbb], a);`
-/// output: `5` (0b1110_0000 has 5 least-significant bits that are 0)
-#[proc_macro]
-pub fn proc_offset(input: TokenStream) -> TokenStream {
-    let pattern = match Pattern::from_stream_with_selector(input) {
-        Ok(p) => p,
-        Err(e) => {
-            println!("{}", e);
-            println!("Usage: proc_offset!([aaa0_bbbb], a);");
-            panic!();
-        }
-    };
+fn generate_mask(pattern: &Pattern) -> String {
+    let mut case_statements = String::new();
+    let mut examples = String::new();
+    for token in &pattern.tokens {
+        let mask = pattern.get_token_mask(*token);
+        case_statements += &format!("            \"{}\" => {},\n", token, mask);
+        examples += &format!("    /// assert_eq!({}, {}::__bitrange_get_mask(\"{}\"));\n", mask, pattern.struct_name, token);
+    }
 
-    let total_length = pattern.pattern.len();
-    let max = pattern.current.into_iter().max().unwrap_or_else(||total_length);
-    format!("{}", total_length - max - 1).parse().unwrap()
+    format!(r#"
+    /// Create a mask based on a given format and a character
+    /// This will map all the bits that match the given character, to 1
+    /// All other bits will be set to 0
+    /// 
+    /// ```
+{examples}
+    /// ```
+    pub fn __bitrange_get_mask(c: &str) -> {size} {{
+        match c {{
+{case_statements}
+            _ => panic!("Invalid mask character (__bitrange_get_mask): {{:?}}", c),
+        }}
+    }}
+"#,
+        case_statements = case_statements,
+        examples = examples,
+        size = pattern.size,
+)
 }
 
-/// Return the default mask of a format
-/// This are all the fields that are set to either `0` or `1`
-/// 
-/// usage:  `proc_default_mask([aaa0_1bbb]);`
-/// output: `0b0001_1000`
-#[proc_macro]
-pub fn proc_default_mask(input: TokenStream) -> TokenStream {
-    let pattern = match Pattern::from_stream(input) {
-        Ok(p) => p,
-        Err(e) => {
-            println!("{}", e);
-            println!("Usage: proc_default_mask!([aaa0_bbbb]);");
-            panic!();
-        }
-    };
-
-    let mut result = String::with_capacity(pattern.pattern.len() + 2);
-    result.push_str("0b");
-    for c in pattern.pattern.chars() {
-        result.push_str(if c == '1' || c == '0' {
-            "1"
-        } else {
-            "0"
-        });
+fn generate_offset(pattern: &Pattern) -> String {
+    let mut examples = String::new();
+    let mut case_statements = String::new();
+    for token in &pattern.tokens {
+        let offset = pattern.get_token_offset(*token);
+        let mask = pattern.get_token_mask(*token);
+        case_statements += &format!("            \"{}\" => {}, // {}\n", token, offset, mask);
+        examples += &format!("    /// assert_eq!({}, {}::__bitrange_get_offset(\"{}\")); // {}\n", offset, pattern.struct_name, token, mask);
     }
-    result.parse().unwrap()
+
+    format!(r#"
+    /// Return the offset of a given character in a format.
+    /// This is the amount of least-significant bits in the proc_mask that are 0.
+    /// 
+    /// e.g. the offset for 0b0000_1100 would be 2
+    /// 
+    /// ```
+{examples}
+    /// ```
+    pub fn __bitrange_get_offset(c: &str) -> usize {{
+        match c {{
+{case_statements}
+            _ => panic!("Invalid mask character (__bitrange_get_offset): {{:?}})", c),
+        }}
+    }}
+    "#,
+    case_statements = case_statements,
+    examples = examples)
 }
 
-/// Returns the default value of a format
-/// This is a value with 1 for every `1` in the format
-/// 
-/// usage:  `proc_default_value([aaa0_1bbb]);`
-/// output: `0b0000_1000`
-#[proc_macro]
-pub fn proc_default_value(input: TokenStream) -> TokenStream {
-    let pattern = match Pattern::from_stream(input) {
-        Ok(p) => p,
-        Err(e) => {
-            println!("{}", e);
-            println!("Usage: proc_default_value!([aaa0_bbbb]);");
-            panic!();
-        }
-    };
+fn generate_default_mask(pattern: &Pattern) -> String {
+    format!(r#"
+    /// Return the default mask of a format.
+    /// This is a mask with all the fields set that are either `0` or `1`
+    /// 
+    /// ```
+    /// assert_eq!({result}, {struct_name}::__bitrange_get_default_mask());
+    /// ```
+    pub fn __bitrange_get_default_mask() -> {size} {{
+        {result}
+    }}
+"#,
+    struct_name = pattern.struct_name,
+    result = pattern.get_default_mask(),
+    size = pattern.size,
+    )
+}
 
-    let mut result = String::with_capacity(pattern.pattern.len() + 2);
-    result.push_str("0b");
-    for c in pattern.pattern.chars() {
-        result.push_str(if c == '1' {
-            "1"
-        } else {
-            "0"
-        });
-    }
-    result.parse().unwrap()
+fn generate_default_value(pattern: &Pattern) -> String {
+    format!(r#"
+    /// Returns the default value of a format
+    /// This is a value with 1 for every `1` in the format
+    /// 
+    /// ```
+    /// assert_eq!({result}, {struct_name}::__bitrange_get_default_value());
+    /// ```
+    pub fn __bitrange_get_default_value() -> {size} {{
+        {result}
+    }}
+"#,
+    result = pattern.get_default_value(),
+    struct_name = pattern.struct_name,
+    size = pattern.size,
+    )
 }

@@ -1,109 +1,130 @@
-use proc_macro::{TokenStream, TokenTree, Delimiter};
-use std::collections::HashMap;
+use proc_macro::TokenStream;
+use proc_macro2::TokenTree;
+use syn;
+use std::collections::HashSet;
 
+#[derive(Debug)]
 pub struct Pattern {
-    pub pattern: String,
-    pub current: Vec<usize>,
+    pub struct_name: String,
+    pub size: String,
+    pub trimmed_pattern: String,
+    pub original_pattern: String,
+    pub tokens: HashSet<char>,
+}
+
+#[derive(Default)]
+struct Parsed {
+    struct_name: String,
+    original_pattern: String,
+    trimmed_pattern: String,
+    size: String,
 }
 
 impl Pattern {
-    pub fn from_stream_with_selector(stream: TokenStream) -> Result<Pattern, String> {
-        let mut iter = stream.into_iter();
-        let possible_pattern = iter.next();
-        let pattern = parse_pattern(possible_pattern)?;
-        consume_comma(iter.next())?;
-        let selector = parse_selector(iter.next())?;
-        if let Some(x) = iter.next() {
-            return Err(format!("Unexpected trailing token: {:?}", x));
-        }
-
-        let mut map = HashMap::<char, Vec<usize>>::default();
-        for (index, c) in pattern.chars().enumerate() {
-            let entry = map.entry(c).or_insert_with(|| Vec::new());
-            entry.push(index);
-        }
-
-        let current = match map.get(&selector) {
-            Some(vec) => vec.clone(),
-            None => {
-                return Err(format!("Token {:?} is not found in pattern {:?}", selector, pattern));
-            }
-        };
-
-        Ok(Pattern {
-            pattern,
-            current,
-        })
-    }
-
     pub fn from_stream(stream: TokenStream) -> Result<Pattern, String> {
-        let mut iter = stream.into_iter();
-        let possible_pattern = iter.next();
-        let pattern = parse_pattern(possible_pattern)?;
+        let parsed = Pattern::parse(stream)?;
+        let tokens = parsed.trimmed_pattern.chars().collect::<HashSet<_>>();
         Ok(Pattern {
-            pattern,
-            current: Vec::new()
+            struct_name: parsed.struct_name,
+            original_pattern: parsed.original_pattern,
+            trimmed_pattern: parsed.trimmed_pattern,
+            size: parsed.size,
+            tokens,
         })
     }
-}
-
-fn parse_pattern(item: Option<TokenTree>) -> Result<String, String> {
-    match item {
-        Some(TokenTree::Group(mut group)) => {
-            loop {
-                match group.delimiter() {
-                    Delimiter::Bracket | Delimiter::None => {},
-                    _ => return Err(format!("Expected bracket, got {:?}", group))
-                }
-                let mut inner_iter = group.stream().into_iter();
-                match inner_iter.next() {
-                    Some(TokenTree::Term(term)) => {
-                        let mut str = term.as_str().to_string();
-                        str.retain(|c| !c.is_whitespace() && c != '_');
-                        return Ok(str)
-                    },
-                    Some(TokenTree::Literal(lit)) => {
-                        let mut str = format!("{}", lit);
-                        str.retain(|c| !c.is_whitespace() && c != '_');
-                        return Ok(str)
-                    },
-                    Some(TokenTree::Group(g)) => {
-                        group = g;
-                    },
-
-                    x => return Err(format!("Expected TokenTree::Term, got {:?}", x))
-                }
+    fn get_literal(iter: &mut ::proc_macro2::token_stream::IntoIter) -> Result<String, String> {
+        match iter.next() {
+            Some(TokenTree::Literal(lit)) => Ok(format!("{}", lit)),
+            Some(TokenTree::Ident(ident)) => Ok(format!("{}", ident)),
+            Some(TokenTree::Group(group)) => {
+                let mut iter = group.stream().into_iter();
+                Pattern::get_literal(&mut iter)
             }
-        },
-        x => {
-            Err(format!("Expected pattern, got {:?}", x))
+            x => Err(format!("Expected literal, got {:?}", x)),
         }
     }
-}
-
-fn consume_comma(item: Option<TokenTree>) -> Result<(), String> {
-    if let Some(TokenTree::Op(op)) = item {
-        if op.op() == ',' {
-            Ok(())
-        } else {
-            Err(format!("Expected comma, got {:?}", op.op()))
+    fn parse(stream: TokenStream) -> Result<Parsed, String> {
+        let ast: syn::DeriveInput = syn::parse(stream).unwrap();
+        let mut parsed = Parsed::default();
+        parsed.struct_name = format!("{}", ast.ident);
+        for attr in ast.attrs {
+            let ident = attr.path.segments.iter().map(|s| format!("{}", s.ident)).collect::<Vec<String>>().join("::");
+            if ident == "BitrangeMask" {
+                let mut iter = attr.tts.into_iter();
+                match iter.next() {
+                    Some(TokenTree::Punct(ref p)) if p.as_char() == '=' => {},
+                    x => return Err(format!("Expected '#', got {:?}", x)),
+                }
+                let original_pattern = Pattern::get_literal(&mut iter)?;
+                let original_pattern = original_pattern.trim_matches('"').trim().to_string();
+                let trimmed_pattern = original_pattern.chars().filter(|c| c.is_alphanumeric()).collect::<String>();
+                parsed.original_pattern = original_pattern;
+                parsed.trimmed_pattern = trimmed_pattern;
+            } else if ident == "BitrangeSize" {
+                let mut iter = attr.tts.into_iter();
+                match iter.next() {
+                    Some(TokenTree::Punct(ref p)) if p.as_char() == '=' => {},
+                    x => return Err(format!("Expected '#', got {:?}", x)),
+                }
+                let size = Pattern::get_literal(&mut iter)?;
+                parsed.size = size.trim_matches('"').to_string();
+            }
         }
-    } else {
-        Err(format!("Expected TokenTree::Op, got {:?}", item))
+        if parsed.trimmed_pattern.is_empty() || parsed.original_pattern.is_empty() {
+            Err("Missing attribute #[BitrangeMask = \"...\"]".to_string())
+        } else if parsed.size.is_empty() {
+            Err("Missing attribute #[BitrangeSize = \"...\"]".to_string())
+        } else {
+            Ok(parsed)
+        }
     }
-}
 
-fn parse_selector(item: Option<TokenTree>) -> Result<char, String> {
-    if let Some(TokenTree::Term(term)) = item {
-        let str = term.as_str();
-        if str.len() == 1 {
-            Ok(str.chars().next().unwrap())
-        } else {
-            Err(format!("Expected a single (ascii) character, got {:?}", str))
+    pub fn get_token_mask(&self, token: char) -> String {
+        let mut str = String::with_capacity(self.original_pattern.len() + 2);
+        str += "0b";
+        for c in self.original_pattern.chars() {
+            str += if c == '_' {
+                "_"
+            } else if c == token {
+                "1"
+            } else {
+                "0"
+            };
         }
-    } else if let Some(TokenTree::Group(group)) = item {
-        parse_selector(group.stream().into_iter().next())
-    } else {
-        Err(format!("Not implemented: {:?}", item))
+        str
+    }
+
+    pub fn get_token_offset(&self, token: char) -> usize {
+        self.trimmed_pattern.chars().rev().take_while(|c| *c != token).count()
+    }
+
+    pub fn get_default_mask(&self) -> String {
+        let mut str = String::with_capacity(self.original_pattern.len() + 2);
+        str += "0b";
+        for c in self.original_pattern.chars() {
+            str += if c == '_' {
+                "_"
+            } else if c == '0' || c == '1' {
+                "1"
+            } else {
+                "0"
+            }
+        }
+        str
+    }
+
+    pub fn get_default_value(&self) -> String {
+        let mut str = String::with_capacity(self.original_pattern.len() + 2);
+        str += "0b";
+        for c in self.original_pattern.chars() {
+            str += if c == '_' {
+                "_"
+            } else if c == '1' {
+                "1"
+            } else {
+                "0"
+            }
+        }
+        str
     }
 }
