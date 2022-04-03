@@ -4,14 +4,16 @@ version = 3
 
 [[package]]
 name = "bitrange"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bitrange_plugin",
 ]
 
 [[package]]
 name = "bitrange_plugin"
-version = "0.1.2"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6719fd34103b205fb79b246a1147c2c7944ccf346af3178c4adadd047725fc5"
 dependencies = [
  "proc-macro2",
  "quote",

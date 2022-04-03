@@ -1,6 +1,6 @@
 [package]
 name = "bitrange_plugin"
-version = "0.1.2"
+version = "0.3.0"
 edition = "2021"
 authors = ["Victor Koenders"]
 description = "Compiler plugin for bitrange to parse formats"
@@ -14,6 +14,6 @@ name = "bitrange_plugin"
 proc-macro = true
 
 [dependencies]
-syn = "*"
-quote = "*"
-proc-macro2 = "*"
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"

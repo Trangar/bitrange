@@ -1,6 +1,6 @@
 [package]
 name = "bitrange"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Victor Koenders <victor.koenders@gmail.com>"]
 description = "Simple plugin to map bits in integer values to fields"
 license = "MIT"
@@ -20,5 +20,5 @@ name = "test"
 path = "src/bin/test.rs"
 
 [dependencies]
-bitrange_plugin = { path = "bitrange_plugin" } # "0.1.2"
+bitrange_plugin = "0.3.0"
 
