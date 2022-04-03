@@ -1,7 +1,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::TokenTree;
-use syn;
 use std::collections::HashSet;
+use syn;
 
 #[derive(Debug)]
 pub struct Pattern {
@@ -48,22 +48,31 @@ impl Pattern {
         let mut parsed = Parsed::default();
         parsed.struct_name = format!("{}", ast.ident);
         for attr in ast.attrs {
-            let ident = attr.path.segments.iter().map(|s| format!("{}", s.ident)).collect::<Vec<String>>().join("::");
+            let ident = attr
+                .path
+                .segments
+                .iter()
+                .map(|s| format!("{}", s.ident))
+                .collect::<Vec<String>>()
+                .join("::");
             if ident == "BitrangeMask" {
-                let mut iter = attr.tts.into_iter();
+                let mut iter = attr.tokens.into_iter();
                 match iter.next() {
-                    Some(TokenTree::Punct(ref p)) if p.as_char() == '=' => {},
+                    Some(TokenTree::Punct(ref p)) if p.as_char() == '=' => {}
                     x => return Err(format!("Expected '#', got {:?}", x)),
                 }
                 let original_pattern = Pattern::get_literal(&mut iter)?;
                 let original_pattern = original_pattern.trim_matches('"').trim().to_string();
-                let trimmed_pattern = original_pattern.chars().filter(|c| c.is_alphanumeric()).collect::<String>();
+                let trimmed_pattern = original_pattern
+                    .chars()
+                    .filter(|c| c.is_alphanumeric())
+                    .collect::<String>();
                 parsed.original_pattern = original_pattern;
                 parsed.trimmed_pattern = trimmed_pattern;
             } else if ident == "BitrangeSize" {
-                let mut iter = attr.tts.into_iter();
+                let mut iter = attr.tokens.into_iter();
                 match iter.next() {
-                    Some(TokenTree::Punct(ref p)) if p.as_char() == '=' => {},
+                    Some(TokenTree::Punct(ref p)) if p.as_char() == '=' => {}
                     x => return Err(format!("Expected '#', got {:?}", x)),
                 }
                 let size = Pattern::get_literal(&mut iter)?;
@@ -95,7 +104,11 @@ impl Pattern {
     }
 
     pub fn get_token_offset(&self, token: char) -> usize {
-        self.trimmed_pattern.chars().rev().take_while(|c| *c != token).count()
+        self.trimmed_pattern
+            .chars()
+            .rev()
+            .take_while(|c| *c != token)
+            .count()
     }
 
     pub fn get_default_mask(&self) -> String {

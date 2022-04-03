@@ -3,21 +3,29 @@
 
 #[cfg(feature = "panic")]
 mod error {
-    #[cfg(feature = "std")]
-    use std::marker::PhantomData;
-    #[cfg(feature = "std")]
-    use std::fmt::Binary;
-    #[cfg(not(feature = "std"))]
-    use core::marker::PhantomData;
     #[cfg(not(feature = "std"))]
     use core::fmt::Binary;
+    #[cfg(not(feature = "std"))]
+    use core::marker::PhantomData;
+    #[cfg(feature = "std")]
+    use std::fmt::Binary;
+    #[cfg(feature = "std")]
+    use std::marker::PhantomData;
 
     #[derive(Debug)]
-    pub struct Error<T> { _phantomdata: PhantomData<T> }
-    
-    impl<T> Error<T> where T : Binary {
+    pub struct Error<T> {
+        _phantomdata: PhantomData<T>,
+    }
+
+    impl<T> Error<T>
+    where
+        T: Binary,
+    {
         pub fn invalid_bits(expected: T, provided: T) -> Error<T> {
-            panic!("Invalid bits, expected 0b{:0b}, got 0b{:0b}", expected, provided);
+            panic!(
+                "Invalid bits, expected 0b{:0b}, got 0b{:0b}",
+                expected, provided
+            );
         }
     }
 }
@@ -32,10 +40,7 @@ mod error {
 
     impl<T> Error<T> {
         pub fn invalid_bits(expected: T, provided: T) -> Error<T> {
-            Error {
-                expected,
-                provided,
-            }
+            Error { expected, provided }
         }
     }
 }
@@ -43,7 +48,7 @@ mod error {
 pub use error::Error;
 
 /// Create a bitrange struct.
-/// 
+///
 /// ```rust
 /// #![deny(warnings)]
 /// #[macro_use]
@@ -127,7 +132,8 @@ macro_rules! bitrange_impl_field {
         impl $struct_name {
             pub fn $field_get(&self) -> $struct_size {
                 #[allow(dead_code, non_snake_case)]
-                let MASK: $struct_size = $struct_name::__bitrange_get_mask(stringify!($field_format));
+                let MASK: $struct_size =
+                    $struct_name::__bitrange_get_mask(stringify!($field_format));
                 #[allow(dead_code, non_snake_case)]
                 let OFFSET: usize = $struct_name::__bitrange_get_offset(stringify!($field_format));
 
@@ -154,7 +160,8 @@ macro_rules! bitrange_impl_field {
         impl $struct_name {
             pub fn $field_set(&mut self, value: $struct_size) -> &mut Self {
                 #[allow(dead_code, non_snake_case)]
-                let MASK: $struct_size = $struct_name::__bitrange_get_mask(stringify!($field_format));
+                let MASK: $struct_size =
+                    $struct_name::__bitrange_get_mask(stringify!($field_format));
                 #[allow(dead_code, non_snake_case)]
                 let OFFSET: usize = $struct_name::__bitrange_get_offset(stringify!($field_format));
                 self.bits &= !MASK;

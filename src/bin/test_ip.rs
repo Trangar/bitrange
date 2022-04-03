@@ -41,5 +41,4 @@ mod test_set {
         header.set_version(0b0100);
         assert_eq!(header.version(), 0b0100);
     }
-
 }

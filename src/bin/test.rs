@@ -1,5 +1,4 @@
 #![doc(hidden)]
-
 #![deny(warnings)]
 #[cfg(test)]
 #[macro_use]
